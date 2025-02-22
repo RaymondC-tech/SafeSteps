@@ -22,12 +22,12 @@ function HazardCard() {
     >
       <h2 style={{ marginBottom: "8px" }}>Report a Hazard</h2>
       <form onSubmit={handleSubmit}>
-        <label
+        {/* <label
           htmlFor="hazard"
           style={{ display: "block", marginBottom: "4px" }}
         >
           Select a hazard type:
-        </label>
+        </label> */}
         <select
           id="hazard"
           value={hazardType}
@@ -39,7 +39,7 @@ function HazardCard() {
             borderRadius: "4px",
           }}
         >
-          <option value="">-- Please choose an option --</option>
+          <option value="">-- Please choose a hazard --</option>
           <option value="Slippery">Slippery</option>
           <option value="Blockage">Blockage</option>
           <option value="Other">Other</option>

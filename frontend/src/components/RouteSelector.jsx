@@ -81,6 +81,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+    marginTop: "10px",
   },
   controls: {
     width: "100%",
@@ -89,7 +90,7 @@ const styles = {
     textAlign: "center",
   },
   button: {
-    padding: "10px 20px",
+    padding: "5px 10px",
     fontSize: "16px",
     backgroundColor: "#007BFF",
     color: "#fff",
@@ -100,8 +101,8 @@ const styles = {
   },
   mapContainer: {
     width: "100%",
-    maxWidth: "800px",
-    height: "500px",
-    marginTop: "20px",
+    maxWidth: "500px",
+    height: "300px",
+    marginTop: "-10px",
   },
 };
