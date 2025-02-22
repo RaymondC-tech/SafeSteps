@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi import HTTPException
+
 from pydantic import BaseModel
 import requests
 from pymongo import MongoClient
@@ -26,6 +28,11 @@ class ReportCondition(BaseModel):   # The input parameters from form
     condition: str
     id: Optional[str] = None
 
+class ReportConditionAddress(BaseModel):   # The input parameters from form
+    address: str
+    condition: str
+    id: Optional[str] = None
+
 class PathRequest(BaseModel):   # Class for input parameters using pydantic model that works well with API data types
     start_lat: float
     start_lon: float
@@ -37,13 +44,13 @@ class RouteAddresses(BaseModel):
     end_address: str
 
 def get_route_from_google(start_lat, start_lng, end_lat, end_lng):
-    API_KEY = config.google_api_key
+    API_KEY = config.google_api_key_sahaj
     url = f"https://maps.googleapis.com/maps/api/directions/json?origin={start_lat},{start_lng}&destination={end_lat},{end_lng}&mode=walking&key={API_KEY}"
     response = requests.get(url)
     return response.json()
 
 def get_coordinates_from_address(address: str):
-    API_KEY = config.google_api_key
+    API_KEY = config.google_api_key_sahaj
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={API_KEY}"
     response = requests.get(url)
     data = response.json()
@@ -67,6 +74,19 @@ async def report_condition(data: ReportCondition):
     result = await conditions_collection.insert_one(condition_dict)
     return {"message": "Condition reported successfully", "id": str(result.inserted_id)}
 
+@app.post('/report-condition-address/')
+async def report_condition_address(data: ReportConditionAddress):
+    lat, lon = get_coordinates_from_address(data.address)
+
+    if lat is None or lon is None:
+        raise HTTPException(status_code=400, detail="Invalid address")
+
+    # Create a ReportCondition object with the obtained coordinates
+    condition_data = ReportCondition(lat=lat, lng=lon, condition=data.condition)
+
+    # Call the existing report_condition function
+    return await report_condition(condition_data)
+
 @app.get('/conditions/')        # works
 async def get_conditions():
     conditions = []
@@ -87,10 +107,10 @@ async def get_route(route_request: PathRequest):    # works
 
 # Route to calculate route from addresses
 @app.post('/get-route-addresses/')
-async def get_route_addresses(route_request: RouteAddresses):
+async def get_route_addresses(route_address: RouteAddresses):
     # Convert the start and end addresses to coordinates
-    start_lat, start_lng = get_coordinates_from_address(route_request.start_address)
-    end_lat, end_lng = get_coordinates_from_address(route_request.end_address)
+    start_lat, start_lng = get_coordinates_from_address(route_address.start_address)
+    end_lat, end_lng = get_coordinates_from_address(route_address.end_address)
 
     # If the addresses could not be geocoded, return an error
     if start_lat is None or end_lat is None:
@@ -100,4 +120,3 @@ async def get_route_addresses(route_request: RouteAddresses):
     route_data = get_route_from_google(start_lat, start_lng, end_lat, end_lng)
     
     return route_data
-
