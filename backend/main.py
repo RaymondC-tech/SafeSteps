@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 import requests
@@ -8,9 +9,13 @@ from typing import Optional, List
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import sys
 import requests
 
 from math import radians, sin, cos, sqrt, atan2
+
+# Add the parent directory to the system path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
 
@@ -25,11 +30,19 @@ conditions_collection = db["conditions"]  # Collection name
 
 app = FastAPI()
 
+# Allow CORS for all origins (you can restrict this in production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change this to your frontend URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 class ReportCondition(BaseModel):   # The input parameters from form
-    lat: float
-    lng: float
-    condition: str
-    id: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    condition: Optional[str] = None
 
 class ReportConditionAddress(BaseModel):   # The input parameters from form
     address: str
@@ -91,9 +104,11 @@ def get_coordinates_from_address(address: str):
 async def root():
     return {"message": "Welcome to the Sidewalk Condition API"}
 
-@app.post('/report-condition/') # works
+@app.post('/report-condition/')
 async def report_condition(data: ReportCondition):
-    condition_dict = data.model_dump(exclude={"id"})
+    # Convert the incoming data to a dictionary
+    condition_dict = data.dict(exclude={"id"})  # Exclude the id if present
+    # Insert the hazard report into the MongoDB collection
     result = await conditions_collection.insert_one(condition_dict)
     return {"message": "Condition reported successfully", "id": str(result.inserted_id)}
 
