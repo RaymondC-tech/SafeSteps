@@ -61,7 +61,9 @@ export default function RouteSelector() {
   return (
     <div style={styles.container}>
       <div style={styles.controls}>
-        <h2>Walking Route Planner</h2>
+        <h2 className="text-2xl font-extrabold text-center text-gray-800 mt-8">
+          Walking Route Planner
+        </h2>
         <LocationSearch
           label="Start Location"
           onPlaceSelected={setStartLocation}
@@ -81,7 +83,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    marginTop: "10px",
+    marginTop: "-10px",
   },
   controls: {
     width: "100%",
@@ -101,8 +103,9 @@ const styles = {
   },
   mapContainer: {
     width: "100%",
-    maxWidth: "500px",
+    maxWidth: "400px",
     height: "300px",
     marginTop: "-10px",
+    // marginBottom: "10px",
   },
 };
