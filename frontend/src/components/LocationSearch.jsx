@@ -22,7 +22,7 @@ export default function LocationSearch({ label, onPlaceSelected }) {
     // Create the autocomplete instance
     const autocomplete = new window.google.maps.places.Autocomplete(
       inputRef.current,
-      { types: ["geocode"] } // or ['(cities)'] if you want city-level results
+      { types: ["establishment"] } // or ['(cities)'] if you want city-level results
     );
 
     // When a user selects a place, retrieve the details
