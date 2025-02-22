@@ -8,42 +8,36 @@ const containerStyle = {
 
 const center = { lat: 43.70011, lng: -79.4163 }; // Toronto
 
-const MapComponent = ({ avoidSlippery }) => {
+const MapComponent = ({ routeData, avoidSlippery, hazardLocation }) => {
   const [directions, setDirections] = useState(null);
   const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
     const directionsService = new window.google.maps.DirectionsService();
 
-    
-    const route1 = {
-      origin: { lat: 43.70011, lng: -79.4163 }, 
-      destination: { lat: 43.6532, lng: -79.3832 }, 
-      travelMode: window.google.maps.TravelMode.WALKING,
-    };
+    if (routeData.start && routeData.end) {
+      const request = {
+        origin: routeData.start,
+        destination: routeData.end,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        waypoints: [],
+        avoidTolls: true, // Avoid toll roads
+      };
 
-    
-    const route2 = {
-      origin: { lat: 43.70011, lng: -79.4163 },
-      destination: { lat: 43.6532, lng: -79.3832 },
-      waypoints: [{ location: { lat: 43.6800, lng: -79.4000 } }], 
-      travelMode: window.google.maps.TravelMode.WALKING,
-    };
-
-    
-    directionsService.route(avoidSlippery ? route2 : route1, (result, status) => {
-      if (status === "OK") {
-        setDirections(result);
-      }
-    });
-
-    
-    if (avoidSlippery) {
-      setMarkers([{ lat: 43.690, lng: -79.405, label: "⚠️ Slippery Road" }]);
-    } else {
-      setMarkers([]);
+      directionsService.route(request, (result, status) => {
+        if (status === "OK") {
+          setDirections(result);
+        } else {
+          console.error("Error fetching directions: ", status);
+        }
+      });
     }
-  }, [avoidSlippery]);
+
+    // Add hazard marker if hazardLocation is provided
+    if (hazardLocation) {
+      setMarkers([{ lat: hazardLocation.lat, lng: hazardLocation.lng, label: "⚠️ Hazard" }]);
+    }
+  }, [routeData, avoidSlippery, hazardLocation]);
 
   return (
     <GoogleMap

@@ -1,14 +1,19 @@
 import React, { useState } from "react";
 import MapComponent from "./components/MapComponent";
-import { useJsApiLoader } from "@react-google-maps/api";
+import RouteInputComponent from "./components/RouteInputComponent";
 import FormComponent from "./components/FormComponent";
+import { useJsApiLoader } from "@react-google-maps/api";
 
+const libraries = ["places"]; // Define libraries as a constant
 
 const App = () => {
+  const [routeData, setRouteData] = useState({ start: "", end: "" });
+  const [hazardLocation, setHazardLocation] = useState(null);
   const [avoidSlippery, setAvoidSlippery] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyAHYFZVXwwXhEVEDj6uYOIRs21bNn6_FEE",
+    googleMapsApiKey: "AIzaSyAHYFZVXwwXhEVEDj6uYOIRs21bNn6_FEE", // Replace with your actual API key
+    libraries, // Use the constant here
   });
 
   return (
@@ -23,18 +28,23 @@ const App = () => {
           </div>
         </div>
 
-        {/* Map takes up the top half */}
-        <div className="h-1/2 mt-12"> {/* Added margin-top to avoid overlap with the top bar */}
+        {/* Form Component - Takes up 1/3 of the top */}
+        <div className="h-1/3 p-4">
+          <FormComponent setHazardLocation={setHazardLocation} />
+        </div>
+
+        {/* Route Input Component - Takes up 1/4 of the space */}
+        <div className="h-1/4 p-4">
+          <RouteInputComponent setRouteData={setRouteData} />
+        </div>
+
+        {/* Map Component - Takes up the remaining space */}
+        <div className="h-1/2 mt-2">
           {isLoaded ? (
-            <MapComponent avoidSlippery={avoidSlippery} />
+            <MapComponent routeData={routeData} avoidSlippery={avoidSlippery} hazardLocation={hazardLocation} />
           ) : (
             <p>Loading map...</p>
           )}
-        </div>
-
-        {/* Form takes the bottom half */}
-        <div className="h-1/2 p-4">
-          <FormComponent setAvoidSlippery={setAvoidSlippery} />
         </div>
       </div>
     </div>
