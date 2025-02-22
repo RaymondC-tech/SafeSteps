@@ -10,10 +10,13 @@ import os
 import config
 
 
-# Create a MongoDB Atlas client
-client = MongoClient("mongodb+srv://raymondch49:uBfdd2HYOkHdQ0JD@walker1.xjymx.mongodb.net/?retryWrites=true&w=majority&appName=walker1")
-database = client.condition_db  # Database name
-conditions_collection = database["condition_collection"]  # Collection name
+# MongoDB connection URL (change if needed)
+MONGO_URI = "mongodb+srv://sahajdeeps2003:E9xOB2BoFhNaA41R@cluster0.wop0f.mongodb.net/"
+
+# Create a MongoDB client
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["sidewalk_db"]  # Database name
+conditions_collection = db["conditions"]  # Collection name
 
 app = FastAPI()
 
@@ -45,16 +48,27 @@ def get_route_from_google(start_lat, start_lng, end_lat, end_lng):
 async def root():
     return {"message": "Welcome to the Sidewalk Condition API"}
 
-@app.post('/report-condition/')
+@app.post('/report-condition/') # works
 async def report_condition(data: ReportCondition):
     condition_dict = data.model_dump(exclude={"id"})
     result = await conditions_collection.insert_one(condition_dict)
     return {"message": "Condition reported successfully", "id": str(result.inserted_id)}
 
-@app.get('/conditions/', response_model=List[ConditionResponse])
+@app.get('/conditions/')        # works
 async def get_conditions():
     conditions = []
     async for condition in conditions_collection.find():
-        condition["_id"] = str(condition["_id"])  # Convert ObjectId to string
-        conditions.append(ConditionResponse(**condition))  # Use the Pydantic model for serialization
+        condition["_id"] = str(condition["_id"])
+        conditions.append(condition)
     return conditions
+
+@app.post('/get-route/')
+async def get_route(route_request: PathRequest):    # works
+    route_data = get_route_from_google(
+        route_request.start_lat, 
+        route_request.start_lon, 
+        route_request.goal_lat, 
+        route_request.goal_lon
+    )
+    return route_data
+
