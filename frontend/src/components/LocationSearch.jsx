@@ -53,18 +53,18 @@ export default function LocationSearch({ label, onPlaceSelected }) {
 
 const styles = {
   container: {
-    marginBottom: "20px",
+    marginBottom: "0px",
     textAlign: "left",
   },
   label: {
     display: "block",
-    marginBottom: "5px",
+    marginBottom: "0px",
     fontWeight: "bold",
   },
   input: {
     width: "100%",
     maxWidth: "300px",
-    padding: "8px",
+    padding: "5px",
     fontSize: "16px",
     border: "1px solid #ccc",
     borderRadius: "4px",
