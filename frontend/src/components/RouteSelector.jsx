@@ -61,7 +61,7 @@ export default function RouteSelector() {
   return (
     <div style={styles.container}>
       <div style={styles.controls}>
-        <h2>Walking Route Planner</h2>
+        <h2 style={styles.heading}>🚶‍♂️ Walking Route Planner</h2>
         <LocationSearch
           label="Start Location"
           onPlaceSelected={setStartLocation}
@@ -77,6 +77,20 @@ export default function RouteSelector() {
 }
 
 const styles = {
+  heading: {
+    fontSize: "14px", // Increased for better visibility
+    fontWeight: "bold", // Makes it stand out
+    textAlign: "center",
+    fontFamily: "Arial, sans-serif", // Modern, clean font
+    color: "#333", // Dark grey for a professional look
+    marginBottom: "10px", // Adds spacing before inputs
+    marginTop: "33px",
+    paddingBottom: "5px",
+    borderBottom: "3px solid #007BFF", // Underline effect with theme color
+    textTransform: "uppercase", // Makes text more structured
+    letterSpacing: "1px", // Adds spacing between letters for readability
+    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)", // Subtle shadow effect
+  },
   container: {
     display: "flex",
     flexDirection: "column",
@@ -84,24 +98,27 @@ const styles = {
   },
   controls: {
     width: "100%",
-    maxWidth: "500px",
-    padding: "20px",
+    maxWidth: "400px", 
+    padding: "14px",
     textAlign: "center",
+    height: "230px", 
   },
   button: {
-    padding: "10px 20px",
-    fontSize: "16px",
+    padding: "5px 10px",
+    fontSize: "13px",
     backgroundColor: "#007BFF",
     color: "#fff",
     border: "none",
     borderRadius: "4px",
     cursor: "pointer",
-    marginTop: "10px",
+    marginTop: "1px",
   },
   mapContainer: {
     width: "100%",
     maxWidth: "800px",
     height: "500px",
-    marginTop: "20px",
+    marginTop: "10px",
+    borderTop: "2px solid #000", // Light grey border at the bottom
+
   },
 };

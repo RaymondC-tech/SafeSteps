@@ -20,7 +20,7 @@ const App = () => {
     <div className="flex justify-center items-center h-screen bg-gray-100">
       <div className="w-[375px] h-[750px] bg-white rounded-[40px] shadow-lg border-4 border-black relative overflow-hidden">
         {/* Top bar for battery and Wi-Fi */}
-        <div className="absolute top-0 left-0 right-0 h-12 bg-gray-800 flex justify-between items-center px-4 text-white">
+        <div className="absolute top-0 left-0 right-0 h-10 bg-gray-800 flex justify-between items-center px-4 text-white">
           <div className="text-sm">Fido</div>
           <div className="flex space-x-2">
             <span className="text-white">🔋 100%</span> {/* Battery icon */}
