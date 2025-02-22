@@ -1,21 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
+from pymongo import MongoClient
+from typing import Optional, List
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 
-from typing import Optional
-
 import config
 
-# MongoDB connection URL (change if needed)
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 
-# Create a MongoDB client
-client = AsyncIOMotorClient(MONGO_URI)
-database = client["sidewalk_db"]  # Database name
-conditions_collection = database["conditions"]  # Collection name
+# Create a MongoDB Atlas client
+client = MongoClient("mongodb+srv://raymondch49:uBfdd2HYOkHdQ0JD@walker1.xjymx.mongodb.net/?retryWrites=true&w=majority&appName=walker1")
+database = client.condition_db  # Database name
+conditions_collection = database["condition_collection"]  # Collection name
 
 app = FastAPI()
 
@@ -30,6 +28,12 @@ class PathRequest(BaseModel):   # Class for input parameters using pydantic mode
     start_lon: float
     goal_lat: float
     goal_lon: float
+
+class ConditionResponse(BaseModel):
+    id: str
+    lat: float
+    lng: float
+    condition: str
 
 def get_route_from_google(start_lat, start_lng, end_lat, end_lng):
     API_KEY = config.google_api_key
@@ -47,10 +51,10 @@ async def report_condition(data: ReportCondition):
     result = await conditions_collection.insert_one(condition_dict)
     return {"message": "Condition reported successfully", "id": str(result.inserted_id)}
 
-@app.get('/conditions/')
+@app.get('/conditions/', response_model=List[ConditionResponse])
 async def get_conditions():
     conditions = []
     async for condition in conditions_collection.find():
-        condition["_id"] = str(condition["_id"])
-        conditions.append(condition)
+        condition["_id"] = str(condition["_id"])  # Convert ObjectId to string
+        conditions.append(ConditionResponse(**condition))  # Use the Pydantic model for serialization
     return conditions
