@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faWifi, faBatteryFull, faMicrophone, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import MapComponent from './components/MapComponent';
 
 const App = () => {
   return (
@@ -24,7 +25,7 @@ const App = () => {
 
         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-24 h-6 bg-black rounded-b-lg"></div>
 
-       
+        <MapComponent />
         <div className="p-4 h-full overflow-y-auto">
   
         </div>
