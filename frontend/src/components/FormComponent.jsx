@@ -25,4 +25,4 @@ const FormComponent = ({ setAvoidSlippery }) => {
   );
 };
 
-export default FormComponent; 
+export default FormComponent;
