@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import LocationSearch from "./LocationSearch";
 
+// import { TextField, Button, Paper, Box, Typography } from "@mui/material";
+
 /* ============ Helpers ============ */
 
 /**
@@ -411,9 +413,7 @@ export default function RouteSelector({ hazards = [] }) {
   return (
     <div style={styles.container}>
       <div style={styles.controls}>
-        <h2 className="text-2xl font-extrabold text-center text-gray-800 mt-8">
-          Circle Waypoints
-        </h2>
+        <h2 style={styles.heading}>🚶‍♂️ Walking Route Planner</h2>
         <LocationSearch
           label="Start Location"
           onPlaceSelected={setStartLocation}
@@ -429,32 +429,59 @@ export default function RouteSelector({ hazards = [] }) {
 }
 
 const styles = {
+  heading: {
+    fontSize: "14px", // Increased for better visibility
+    fontWeight: "bold", // Makes it stand out
+    textAlign: "center",
+    fontFamily: "Arial, sans-serif", // Modern, clean font
+    color: "#000", // Dark grey for a professional look
+    marginBottom: "10px", // Adds spacing before inputs
+    marginTop: "10px",
+    paddingBottom: "5px",
+    borderBottom: "3px solid #007BFF", // Underline effect with theme color
+    textTransform: "uppercase", // Makes text more structured
+    letterSpacing: "1px", // Adds spacing between letters for readability
+    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)", // Subtle shadow effect
+  },
   container: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    marginTop: "-10px",
+    marginTop: "10px",
+    position: "relative",
   },
   controls: {
-    width: "100%",
-    maxWidth: "500px",
-    padding: "20px",
-    textAlign: "center",
+    backgroundColor: "rgba(50, 50, 50, 0.4)", // Semi-transparent grey
+    backdropFilter: "blur(10px)", // Glassmorphism effect
+    borderRadius: "10px",
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)", // Floating effect
+    zIndex: "1000", // Puts this section above the map
+    position: "absolute", // Ensures it stays above
+    top: "96px", // Moves it slightly down
+    left: "50%",
+    transform: "translateX(-50%)", // Centers it
   },
   button: {
-    padding: "10px 20px",
-    fontSize: "16px",
+    padding: "8px 12px", // Adds more inner spacing for better appearance
+    fontSize: "12px", // Slightly bigger font for better readability
     backgroundColor: "#007BFF",
     color: "#fff",
     border: "none",
-    borderRadius: "4px",
+    borderRadius: "8px", // Rounded corners
     cursor: "pointer",
-    marginTop: "10px",
+    margin: "10px auto", // Ensures spacing and centers button horizontally
+    display: "block", // Ensures proper alignment
+    width: "50%", // Limits width so it's not too large
+    maxWidth: "250px", // Sets a maximum width
   },
   mapContainer: {
     width: "100%",
     maxWidth: "500px",
-    height: "300px",
-    marginTop: "-10px",
+    marginTop: "35px",
+    height: "701px",
+    position: "relative", // Keeps map behind the controls
+    zIndex: "1", // Ensures map stays in the background
+    borderTop: "2px solid #000",
+    borderBottom: "2px solid #000",
   },
 };

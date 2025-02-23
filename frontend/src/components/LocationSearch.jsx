@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-
+import { FaMapMarkerAlt } from "react-icons/fa"; // Import map icons
 /**
  * A reusable component that attaches Google Places Autocomplete
  * to an input field. When a user selects a place, it calls onPlaceSelected
@@ -39,12 +39,12 @@ export default function LocationSearch({ label, onPlaceSelected }) {
   }, [onPlaceSelected]);
 
   return (
-    <div style={styles.container}>
-      <label style={styles.label}>{label}</label>
+    <div style={styles.inputContainer}>
+      <FaMapMarkerAlt style={styles.icon} /> {/* Map Icon */}
       <input
         ref={inputRef}
         type="text"
-        placeholder={`Enter ${label}`}
+        placeholder={`${label}`}
         style={styles.input}
       />
     </div>
@@ -52,21 +52,27 @@ export default function LocationSearch({ label, onPlaceSelected }) {
 }
 
 const styles = {
-  container: {
-    marginBottom: "0px",
-    textAlign: "left",
+  inputContainer: {
+    display: "flex", // Aligns icon and input field side by side
+    alignItems: "center",
+    width: "340px", // Adjust width for better fit
+    height: "28px",
+    margin: "10px", // Adds spacing around the box
+    padding: "8px", // Inner spacing
+    backgroundColor: "#fff",
+    borderRadius: "8px", // Rounded corners
+    border: "1px solid #ccc",
   },
-  label: {
-    display: "block",
-    marginBottom: "0px",
-    fontWeight: "bold",
+  icon: {
+    marginRight: "8px", // Space between icon and input
+    color: "#007BFF", // Make it visually appealing
+    fontSize: "16px",
   },
   input: {
-    width: "100%",
-    maxWidth: "300px",
-    padding: "5px",
-    fontSize: "16px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
+    flex: 1, // Fills remaining space
+    fontSize: "12px",
+    border: "none",
+    outline: "none",
+    paddingLeft: "5px", // Prevents text from touching the left edge
   },
 };
