@@ -15,31 +15,30 @@ const MapComponent = ({ avoidSlippery }) => {
   useEffect(() => {
     const directionsService = new window.google.maps.DirectionsService();
 
-    
     const route1 = {
-      origin: { lat: 43.70011, lng: -79.4163 }, 
-      destination: { lat: 43.6532, lng: -79.3832 }, 
+      origin: { lat: 43.70011, lng: -79.4163 },
+      destination: { lat: 43.6532, lng: -79.3832 },
       travelMode: window.google.maps.TravelMode.WALKING,
     };
 
-    
     const route2 = {
       origin: { lat: 43.70011, lng: -79.4163 },
       destination: { lat: 43.6532, lng: -79.3832 },
-      waypoints: [{ location: { lat: 43.6800, lng: -79.4000 } }], 
+      waypoints: [{ location: { lat: 43.68, lng: -79.4 } }],
       travelMode: window.google.maps.TravelMode.WALKING,
     };
 
-    
-    directionsService.route(avoidSlippery ? route2 : route1, (result, status) => {
-      if (status === "OK") {
-        setDirections(result);
+    directionsService.route(
+      avoidSlippery ? route2 : route1,
+      (result, status) => {
+        if (status === "OK") {
+          setDirections(result);
+        }
       }
-    });
+    );
 
-    
     if (avoidSlippery) {
-      setMarkers([{ lat: 43.690, lng: -79.405, label: "⚠️ Slippery Road" }]);
+      setMarkers([{ lat: 43.69, lng: -79.405, label: "⚠️ Slippery Road" }]);
     } else {
       setMarkers([]);
     }
@@ -49,10 +48,17 @@ const MapComponent = ({ avoidSlippery }) => {
     <GoogleMap
       mapContainerStyle={containerStyle}
       center={center}
-      zoom={14} 
-      options={{ disableDefaultUI: false, gestureHandling: "auto" }} 
+      zoom={14}
+      options={{ disableDefaultUI: false, gestureHandling: "auto" }}
     >
-      {directions && <DirectionsRenderer directions={directions} options={{ polylineOptions: { strokeColor: avoidSlippery ? "red" : "blue" } }} />}
+      {directions && (
+        <DirectionsRenderer
+          directions={directions}
+          options={{
+            polylineOptions: { strokeColor: avoidSlippery ? "red" : "blue" },
+          }}
+        />
+      )}
       {markers.map((marker, index) => (
         <Marker key={index} position={marker} label={marker.label} />
       ))}
@@ -60,4 +66,4 @@ const MapComponent = ({ avoidSlippery }) => {
   );
 };
 
-export default MapComponent; 
+export default MapComponent;
