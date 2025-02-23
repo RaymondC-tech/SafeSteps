@@ -94,6 +94,7 @@ const HazardForm = ({ onReportHazard }) => {
   const handleLoad = (autocomplete) => {
     autocompleteRef.current = autocomplete;
   };
+  
 
   const handlePlaceChanged = () => {
     if (autocompleteRef.current) {
