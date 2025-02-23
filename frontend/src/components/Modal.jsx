@@ -33,7 +33,7 @@ const modalStyles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)", // Darker overlay for better focus
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -43,16 +43,16 @@ const modalStyles = {
     backgroundColor: "white",
     padding: "40px",
     borderRadius: "12px",
-    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)", // Softer shadow
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
     width: "90%",
-    maxWidth: "350px", // Adjusted maxWidth for a narrower modal
+    maxWidth: "350px",
     textAlign: "center",
   },
   title: {
     fontSize: "26px",
     fontWeight: "700",
     marginBottom: "20px",
-    color: "#333", // Darker text for better readability
+    color: "#333",
   },
   input: {
     display: "block",
@@ -64,7 +64,7 @@ const modalStyles = {
     fontSize: "16px",
     transition: "border-color 0.3s",
     outline: "none",
-    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)", // Subtle shadow for inputs
+    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
   },
   buttonContainer: {
     display: "flex",
@@ -80,9 +80,9 @@ const modalStyles = {
     cursor: "pointer",
     fontSize: "16px",
     transition: "background-color 0.3s, transform 0.2s",
-    flex: "1", // Make buttons take equal space
-    margin: "0 5px", // Space between buttons
-    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)", // Subtle shadow for buttons
+    flex: "1",
+    margin: "0 5px",
+    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
   },
 };
 

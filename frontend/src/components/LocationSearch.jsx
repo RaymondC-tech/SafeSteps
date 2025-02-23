@@ -1,31 +1,20 @@
 import React, { useRef, useEffect } from "react";
-import { FaMapMarkerAlt } from "react-icons/fa"; // Import map icons
-/**
- * A reusable component that attaches Google Places Autocomplete
- * to an input field. When a user selects a place, it calls onPlaceSelected
- * with the full Place object.
- *
- * Props:
- *  - label: string (e.g., "Start Location" or "End Location")
- *  - onPlaceSelected: function(place) -> void
- */
+import { FaMapMarkerAlt } from "react-icons/fa";
+
 export default function LocationSearch({ label, onPlaceSelected }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    // Ensure the Google Maps script is loaded
     if (!window.google) {
       console.error("Google Maps JavaScript API library must be loaded.");
       return;
     }
 
-    // Create the autocomplete instance
     const autocomplete = new window.google.maps.places.Autocomplete(
       inputRef.current,
-      { types: ["establishment"] } // or ['(cities)'] if you want city-level results
+      { types: ["establishment"] }
     );
 
-    // When a user selects a place, retrieve the details
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
       if (!place.geometry) {
@@ -53,26 +42,26 @@ export default function LocationSearch({ label, onPlaceSelected }) {
 
 const styles = {
   inputContainer: {
-    display: "flex", // Aligns icon and input field side by side
+    display: "flex",
     alignItems: "center",
-    width: "340px", // Adjust width for better fit
+    width: "340px",
     height: "28px",
-    margin: "10px", // Adds spacing around the box
-    padding: "8px", // Inner spacing
+    margin: "10px",
+    padding: "8px",
     backgroundColor: "#fff",
-    borderRadius: "8px", // Rounded corners
+    borderRadius: "8px",
     border: "1px solid #ccc",
   },
   icon: {
-    marginRight: "8px", // Space between icon and input
-    color: "#007BFF", // Make it visually appealing
+    marginRight: "8px",
+    color: "#007BFF",
     fontSize: "16px",
   },
   input: {
-    flex: 1, // Fills remaining space
+    flex: 1,
     fontSize: "12px",
     border: "none",
     outline: "none",
-    paddingLeft: "5px", // Prevents text from touching the left edge
+    paddingLeft: "5px",
   },
 };

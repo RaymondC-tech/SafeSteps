@@ -1,20 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Autocomplete } from "@react-google-maps/api";
 
-// Define your hazard options.
 const hazardOptions = [
   { label: "Icy", value: "Icy" },
   { label: "High Snow Level", value: "High Snow Level" },
   { label: "Other", value: "Other" },
-  // Add more options here if needed.
 ];
 
-// A custom select component that displays a scrollable list of options.
 const CustomSelect = ({ value, onChange, options, placeholder }) => {
   const [open, setOpen] = useState(false);
   const selectRef = useRef(null);
 
-  // Close the dropdown if user clicks outside.
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (selectRef.current && !selectRef.current.contains(e.target)) {
@@ -42,9 +38,8 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
           fontSize: "12px",
           userSelect: "none",
           width: "100%",
-          maxWidth: "200px", // Smaller width
+          maxWidth: "200px",
           borderRadius: "5px",
-          //   marginBottom: "8px",
         }}
       >
         {value
@@ -62,7 +57,7 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
             fontSize: "12px",
             userSelect: "none",
             width: "100%",
-            maxWidth: "200px", // Smaller width
+            maxWidth: "200px",
             borderRadius: "5px",
           }}
         >
@@ -72,7 +67,7 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
               onClick={() => handleOptionClick(option.value)}
               style={{
                 padding: "5 px",
-                // borderBottom: "1px solid #eee",
+
                 cursor: "pointer",
                 marginBottom: "5px",
               }}
@@ -94,7 +89,6 @@ const HazardForm = ({ onReportHazard }) => {
   const handleLoad = (autocomplete) => {
     autocompleteRef.current = autocomplete;
   };
-  
 
   const handlePlaceChanged = () => {
     if (autocompleteRef.current) {
@@ -121,7 +115,7 @@ const HazardForm = ({ onReportHazard }) => {
       lat: hazardAddress.geometry.location.lat(),
       lng: hazardAddress.geometry.location.lng(),
       type: hazardType,
-      radius: 50, // 50-meter buffer; adjust as needed
+      radius: 50,
       address: hazardAddress.formatted_address,
     };
     onReportHazard(hazard);
@@ -134,18 +128,18 @@ const HazardForm = ({ onReportHazard }) => {
       onSubmit={handleSubmit}
       className="p-2 rounded"
       style={{
-        backgroundColor: "rgba(50, 50, 50, 0.4)", // More transparent
+        backgroundColor: "rgba(50, 50, 50, 0.4)",
         borderRadius: "8px",
         backdropFilter: "blur(4px)",
         padding: "10px",
         position: "absolute",
-        bottom: "29px", // Moves slightly up
+        bottom: "29px",
         left: "38%",
         transform: "translateX(-50%)",
         zIndex: 1000,
         width: "60%",
-        maxWidth: "280px", // More compact width
-        boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)", // Lighter shadow
+        maxWidth: "280px",
+        boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)",
         marginLeft: "-10px",
         marginBottom: "-14px",
         height: "20 %",

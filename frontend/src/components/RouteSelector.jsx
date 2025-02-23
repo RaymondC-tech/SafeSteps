@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import LocationSearch from "./LocationSearch";
-import Modal from "./Modal"; // <-- ADDED: import your modal component
+import Modal from "./Modal";
 
-/* ============ Helpers ============ */
-
-/**
- * Return how many hazards the route's overview_path intersects.
- * We do a simple check: if any route point is within hazard.radius
- */
 function countHazardIntersections(routePoints, hazards) {
   let total = 0;
   for (const hazard of hazards) {
     const hazardLatLng = new window.google.maps.LatLng(hazard.lat, hazard.lng);
     const radius = hazard.radius || 20;
-    // If any route point is within 'radius' meters, we consider it an intersection
     const intersects = routePoints.some((pt) => {
       const dist = window.google.maps.geometry.spherical.computeDistanceBetween(
         new window.google.maps.LatLng(pt.lat(), pt.lng()),
@@ -26,10 +19,6 @@ function countHazardIntersections(routePoints, hazards) {
   return total;
 }
 
-/**
- * Generate circle waypoints around a hazard center at a given radiusInMeters.
- * angleStep determines how many candidate points we produce (e.g. 30 -> 12 points).
- */
 function generateCircleWaypoints(hazard, radiusInMeters, angleStep = 30) {
   const centerLat = hazard.lat;
   const centerLng = hazard.lng;
@@ -48,10 +37,7 @@ function generateCircleWaypoints(hazard, radiusInMeters, angleStep = 30) {
   return candidates;
 }
 
-/* ============ End Helpers ============ */
-
 export default function RouteSelector({ hazards = [] }) {
-  // ADDED: state for modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [startLocation, setStartLocation] = useState(null);
@@ -63,21 +49,17 @@ export default function RouteSelector({ hazards = [] }) {
   const startMarkerRef = useRef(null);
   const endMarkerRef = useRef(null);
 
-  // Map references
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeRendererRef = useRef(null);
   const infoWindowRef = useRef(null);
   const directionsServiceRef = useRef(null);
 
-  // Hazard markers/circles
   const hazardMarkersRef = useRef([]);
   const hazardCirclesRef = useRef([]);
 
-  // Markers for each chosen waypoint
   const detourMarkersRef = useRef([]);
 
-  // Initialize map, DirectionsRenderer, InfoWindow, DirectionsService
   useEffect(() => {
     if (window.google && mapRef.current && !mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
@@ -100,7 +82,6 @@ export default function RouteSelector({ hazards = [] }) {
     }
   }, []);
 
-  // Render final route
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
       if (
@@ -109,14 +90,13 @@ export default function RouteSelector({ hazards = [] }) {
         startLocation &&
         endLocation
       ) {
-        // Clear old custom markers
         if (startMarkerRef.current) {
           startMarkerRef.current.setMap(null);
         }
         if (endMarkerRef.current) {
           endMarkerRef.current.setMap(null);
         }
-        // Create new markers and save them in refs
+
         startMarkerRef.current = new window.google.maps.Marker({
           position: startLocation.geometry.location,
           map: mapInstanceRef.current,
@@ -128,7 +108,6 @@ export default function RouteSelector({ hazards = [] }) {
           label: "B",
         });
 
-        // Render route and fit map
         routeRendererRef.current.setDirections(finalRoute);
         routeRendererRef.current.setOptions({
           polylineOptions: {
@@ -143,7 +122,6 @@ export default function RouteSelector({ hazards = [] }) {
     }
   }, [finalRoute, startLocation, endLocation, useDetourColor]);
 
-  // Show/hide notice
   useEffect(() => {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
     if (notice) {
@@ -157,7 +135,6 @@ export default function RouteSelector({ hazards = [] }) {
     }
   }, [notice]);
 
-  // Draw hazard markers & circles
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     hazardMarkersRef.current.forEach((m) => m.setMap(null));
@@ -187,7 +164,6 @@ export default function RouteSelector({ hazards = [] }) {
     });
   }, [hazards]);
 
-  // Promisify route call
   function getRoute(request) {
     return new Promise((resolve, reject) => {
       directionsServiceRef.current.route(request, (result, status) => {
@@ -213,8 +189,8 @@ export default function RouteSelector({ hazards = [] }) {
 
     while (radius <= maxRadius) {
       setNotice(`Loading...`);
-      // Generate candidate waypoints
-      const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
+
+      const candidates = generateCircleWaypoints(hazard, radius, 30);
 
       for (let i = 0; i < candidates.length; i++) {
         const candidate = candidates[i];
@@ -351,7 +327,6 @@ export default function RouteSelector({ hazards = [] }) {
     }
   };
 
-  // Draw hazards
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     hazardMarkersRef.current.forEach((m) => m.setMap(null));
@@ -381,7 +356,6 @@ export default function RouteSelector({ hazards = [] }) {
     });
   }, [hazards]);
 
-  // Show/hide notice
   useEffect(() => {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
     if (notice) {
@@ -395,7 +369,6 @@ export default function RouteSelector({ hazards = [] }) {
     }
   }, [notice]);
 
-  // Render final route
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
       routeRendererRef.current.setDirections(finalRoute);
@@ -417,10 +390,10 @@ export default function RouteSelector({ hazards = [] }) {
         {/* Absolutely position the image on the left, center the heading. */}
         <div style={styles.headerRow}>
           <img
-            src="/images/profile.png" // <-- your profile image
+            src="/images/profile.png"
             alt="Profile"
             style={styles.profilePic}
-            onClick={() => setIsModalOpen(true)} // opens modal
+            onClick={() => setIsModalOpen(true)}
           />
           <h2 style={styles.heading}>🚶‍♂️ SafeSteps</h2>
         </div>
@@ -436,14 +409,12 @@ export default function RouteSelector({ hazards = [] }) {
       </div>
       <div ref={mapRef} style={styles.mapContainer} />
 
-      {/* Conditionally render the modal */}
       {isModalOpen && <Modal onClose={() => setIsModalOpen(false)} />}
     </div>
   );
 }
 
 const styles = {
-  // The heading is absolutely centered in its parent
   heading: {
     position: "absolute",
     left: "50%",
@@ -459,7 +430,7 @@ const styles = {
     textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)",
     borderBottom: "3px solid #007BFF",
     paddingBottom: "3px",
-    margin: 0, // remove default margins for absolute positioning
+    margin: 0,
   },
   container: {
     display: "flex",
@@ -479,19 +450,13 @@ const styles = {
     left: "50%",
     transform: "translateX(-50%)",
   },
-  /**
-   * This container is relative so the heading can be absolutely centered
-   * while the image is pinned on the left edge.
-   */
+
   headerRow: {
     position: "relative",
     width: "100%",
-    height: "50px", // Enough height for the image & heading
+    height: "50px",
   },
-  /**
-   * The profile picture is absolutely placed on the left,
-   * vertically centered by top: 50% + translateY(-50%).
-   */
+
   profilePic: {
     position: "absolute",
     left: "10px",
