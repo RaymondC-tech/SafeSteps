@@ -3,8 +3,8 @@ import { Autocomplete } from "@react-google-maps/api";
 
 // Define your hazard options.
 const hazardOptions = [
-  { label: "Icy", value: "Slippery" },
-  { label: "Blockage", value: "Blockage" },
+  { label: "Icy", value: "Icy" },
+  { label: "High Snow Level", value: "High Snow Level" },
   { label: "Other", value: "Other" },
   // Add more options here if needed.
 ];
