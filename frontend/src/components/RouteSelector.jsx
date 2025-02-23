@@ -1,196 +1,113 @@
 import React, { useState, useEffect, useRef } from "react";
 import LocationSearch from "./LocationSearch";
 
-/* ============ Geometry Helpers ============ */
+/* ============ Helpers ============ */
 
 /**
- * Return the { closestPoint, paramT } on segment AB that’s closest to H.
- */
-function getClosestPointOnSegment(A, B, H) {
-  const Ax = A.lat();
-  const Ay = A.lng();
-  const Bx = B.lat();
-  const By = B.lng();
-  const Hx = H.lat();
-  const Hy = H.lng();
-
-  const ABx = Bx - Ax;
-  const ABy = By - Ay;
-  const AHx = Hx - Ax;
-  const AHy = Hy - Ay;
-
-  const ab2 = ABx * ABx + ABy * ABy;
-  if (ab2 === 0) {
-    // A and B are the same point
-    return { closestPoint: A, paramT: 0 };
-  }
-
-  const ahDotAb = AHx * ABx + AHy * ABy;
-  let t = ahDotAb / ab2;
-  t = Math.max(0, Math.min(1, t));
-
-  const closestLat = Ax + t * ABx;
-  const closestLng = Ay + t * ABy;
-  const closestPoint = new window.google.maps.LatLng(closestLat, closestLng);
-
-  return { closestPoint, paramT: t };
-}
-
-/**
- * Distance from hazard center to the line segment [startPt, endPt].
- */
-function getDistanceToSegment(startPt, endPt, hazardLatLng) {
-  const { closestPoint } = getClosestPointOnSegment(
-    startPt,
-    endPt,
-    hazardLatLng
-  );
-  return window.google.maps.geometry.spherical.computeDistanceBetween(
-    closestPoint,
-    hazardLatLng
-  );
-}
-
-/**
- * Count how many times a route intersects any hazard circle.
- * Returns the total number of intersecting segments.
+ * Return how many hazards the route's overview_path intersects.
+ * We do a simple check: if any route point is within hazard.radius
  */
 function countHazardIntersections(routePoints, hazards) {
-  let count = 0;
-  for (let i = 0; i < routePoints.length - 1; i++) {
-    const startPt = routePoints[i];
-    const endPt = routePoints[i + 1];
-    hazards.forEach((hazard) => {
-      const hazardLatLng = new window.google.maps.LatLng(
-        hazard.lat,
-        hazard.lng
+  let total = 0;
+  for (const hazard of hazards) {
+    const hazardLatLng = new window.google.maps.LatLng(hazard.lat, hazard.lng);
+    const radius = hazard.radius || 20;
+    // If any route point is within 'radius' meters, we consider it an intersection
+    const intersects = routePoints.some((pt) => {
+      const dist = window.google.maps.geometry.spherical.computeDistanceBetween(
+        new window.google.maps.LatLng(pt.lat(), pt.lng()),
+        hazardLatLng
       );
-      const dist = getDistanceToSegment(startPt, endPt, hazardLatLng);
-      const radius = hazard.radius || 20;
-      if (dist < radius) {
-        count++;
-      }
+      return dist < radius;
     });
+    if (intersects) total++;
   }
-  return count;
+  return total;
 }
 
 /**
- * Find the first intersection on a route.
- * Returns { hazard, segmentIndex, paramT, closestPoint } or null if none.
+ * Generate circle waypoints around a hazard center at a given radiusInMeters.
+ * angleStep determines how many candidate points we produce (e.g. 30 -> 12 points).
  */
-function findFirstIntersection(routePoints, hazards) {
-  for (let i = 0; i < routePoints.length - 1; i++) {
-    const startPt = routePoints[i];
-    const endPt = routePoints[i + 1];
-    for (let hazard of hazards) {
-      const hazardLatLng = new window.google.maps.LatLng(
-        hazard.lat,
-        hazard.lng
-      );
-      const dist = getDistanceToSegment(startPt, endPt, hazardLatLng);
-      const radius = hazard.radius || 20;
-      if (dist < radius) {
-        const { closestPoint, paramT } = getClosestPointOnSegment(
-          startPt,
-          endPt,
-          hazardLatLng
-        );
-        return { hazard, segmentIndex: i, paramT, closestPoint };
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * Shift a point outward by hazard radius + margin to "push" the route away.
- */
-function computeWaypointOutsideHazard(closestPoint, hazard, margin = 50) {
-  const clearance = (hazard.radius || 20) + margin;
-
-  const hazardLat = hazard.lat;
-  const hazardLng = hazard.lng;
-  const routeLat = closestPoint.lat();
-  const routeLng = closestPoint.lng();
-
-  const dx = routeLat - hazardLat;
-  const dy = routeLng - hazardLng;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist === 0) {
-    // If the route point is exactly at hazard center, offset a bit
-    return new window.google.maps.LatLng(
-      hazardLat + 0.0005,
-      hazardLng + 0.0005
-    );
-  }
-
-  const ndx = dx / dist;
-  const ndy = dy / dist;
-
-  // Approx conversions for lat/lng
+function generateCircleWaypoints(hazard, radiusInMeters, angleStep = 30) {
+  const centerLat = hazard.lat;
+  const centerLng = hazard.lng;
   const latConversion = 111111;
-  const lngConversion = 111111 * Math.cos(hazardLat * (Math.PI / 180));
+  const lngConversion = 111111 * Math.cos(centerLat * (Math.PI / 180));
 
-  const offsetLat = (clearance * ndx) / latConversion;
-  const offsetLng = (clearance * ndy) / lngConversion;
-
-  return new window.google.maps.LatLng(
-    hazardLat + offsetLat,
-    hazardLng + offsetLng
-  );
+  const candidates = [];
+  for (let deg = 0; deg < 360; deg += angleStep) {
+    const rad = (deg * Math.PI) / 180;
+    const offsetLat = (radiusInMeters * Math.cos(rad)) / latConversion;
+    const offsetLng = (radiusInMeters * Math.sin(rad)) / lngConversion;
+    const lat = centerLat + offsetLat;
+    const lng = centerLng + offsetLng;
+    candidates.push({ lat, lng });
+  }
+  return candidates;
 }
+
+/* ============ End Helpers ============ */
 
 export default function RouteSelector({ hazards = [] }) {
   const [startLocation, setStartLocation] = useState(null);
   const [endLocation, setEndLocation] = useState(null);
-
-  const [finalDirections, setFinalDirections] = useState(null);
+  const [finalRoute, setFinalRoute] = useState(null);
   const [notice, setNotice] = useState("");
+  const [useDetourColor, setUseDetourColor] = useState(false);
 
-  // Map & DirectionsRenderer
+  // Map references
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const routeRendererRef = useRef(null);
   const infoWindowRef = useRef(null);
+  const directionsServiceRef = useRef(null);
 
-  // Hazard markers & circles
+  // Hazard markers/circles
   const hazardMarkersRef = useRef([]);
   const hazardCirclesRef = useRef([]);
 
-  // DirectionsService
-  const directionsService = useRef(null);
+  // Markers for each chosen waypoint
+  const detourMarkersRef = useRef([]);
 
-  // Initialize the map & single DirectionsRenderer
+  // Initialize map, DirectionsRenderer, InfoWindow, DirectionsService
   useEffect(() => {
     if (window.google && mapRef.current && !mapInstanceRef.current) {
       mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
         center: { lat: 43.47511, lng: -80.5295 },
         zoom: 14,
       });
+      routeRendererRef.current = new window.google.maps.DirectionsRenderer({
+        polylineOptions: { strokeColor: "blue", strokeWeight: 5 },
+        preserveViewport: false,
+      });
+      routeRendererRef.current.setMap(mapInstanceRef.current);
 
       infoWindowRef.current = new window.google.maps.InfoWindow({
         content: "",
         position: mapInstanceRef.current.getCenter(),
       });
 
-      routeRendererRef.current = new window.google.maps.DirectionsRenderer({
-        polylineOptions: { strokeColor: "red", strokeWeight: 5 },
-        preserveViewport: false,
-        suppressMarkers: false, // Show A/B markers
-      });
-      routeRendererRef.current.setMap(mapInstanceRef.current);
-
-      directionsService.current = new window.google.maps.DirectionsService();
+      directionsServiceRef.current = new window.google.maps.DirectionsService();
     }
   }, []);
 
-  // Render finalDirections
+  // Render final route
   useEffect(() => {
-    if (routeRendererRef.current && finalDirections) {
-      routeRendererRef.current.setDirections(finalDirections);
+    if (finalRoute && routeRendererRef.current) {
+      routeRendererRef.current.setDirections(finalRoute);
+      routeRendererRef.current.setOptions({
+        polylineOptions: {
+          strokeColor: useDetourColor ? "red" : "blue",
+          strokeWeight: 5,
+        },
+      });
+      // Fit map to route
+      const bounds = new window.google.maps.LatLngBounds();
+      finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
+      mapInstanceRef.current.fitBounds(bounds);
     }
-  }, [finalDirections]);
+  }, [finalRoute, useDetourColor]);
 
   // Show/hide notice
   useEffect(() => {
@@ -206,10 +123,9 @@ export default function RouteSelector({ hazards = [] }) {
     }
   }, [notice]);
 
-  // Draw hazards
+  // Draw hazard markers & circles
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-
     hazardMarkersRef.current.forEach((m) => m.setMap(null));
     hazardMarkersRef.current = [];
     hazardCirclesRef.current.forEach((c) => c.setMap(null));
@@ -237,199 +153,266 @@ export default function RouteSelector({ hazards = [] }) {
     });
   }, [hazards]);
 
+  // Promisify route call
+  function getRoute(request) {
+    return new Promise((resolve, reject) => {
+      directionsServiceRef.current.route(request, (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+          resolve(result);
+        } else {
+          reject("Directions request failed");
+        }
+      });
+    });
+  }
+
   /**
-   * Tries multiple times (maxIterations) to add a single waypoint at each step.
-   * Each iteration, we increase the margin used for the detour waypoint.
-   * If we find a hazard-free route, we return it. Otherwise, we return null.
+   * For each hazard that intersects, we do the "circle approach":
+   * - Start at radius=30, try all angles => pick best route
+   * - If still intersects, radius=40, 50, etc. until we reduce intersections or get 0
    */
-  function iterativeSingleWaypointSearch(
+  async function fixHazardWithCircle(
+    hazard,
     baseRequest,
+    minRadius = 30,
+    maxRadius = 200
+  ) {
+    let radius = minRadius;
+    let bestRoute = null;
+    let bestIntersections = Infinity;
+    let bestWaypoint = null;
+
+    while (radius <= maxRadius) {
+      setNotice(`Trying circle radius = ${radius} for hazard ${hazard.type}`);
+      // Generate candidate waypoints
+      const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
+      for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        const testRequest = {
+          ...baseRequest,
+          waypoints: [
+            ...(baseRequest.waypoints || []),
+            { location: candidate },
+          ],
+        };
+        try {
+          const result = await getRoute(testRequest);
+          const routePoints = result.routes[0].overview_path;
+          const intersections = countHazardIntersections(routePoints, hazards);
+          if (intersections < bestIntersections) {
+            bestIntersections = intersections;
+            bestRoute = result;
+            bestWaypoint = candidate;
+            if (bestIntersections === 0) {
+              break; // fully safe
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      if (bestRoute && bestIntersections === 0) {
+        // Found a hazard-free route with this circle radius
+        break;
+      }
+      radius += 10; // increase circle radius
+    }
+
+    if (!bestRoute) return null; // no route found at all
+    return {
+      route: bestRoute,
+      waypoint: bestWaypoint,
+      intersections: bestIntersections,
+    };
+  }
+
+  // Master function: For each hazard that intersects, fix it with a circle approach, then proceed
+  async function getSafeRouteCircleApproach(
+    request,
     hazards,
     maxIterations = 8
   ) {
-    return new Promise((resolve) => {
-      let iterationCount = 0;
-      let currentRequest = { ...baseRequest };
+    let iterationCount = 0;
+    let currentRequest = { ...request };
+    let currentRoute = null;
 
-      const tryNext = () => {
-        if (!directionsService.current) {
-          resolve(null);
-          return;
-        }
+    while (iterationCount < maxIterations) {
+      iterationCount++;
+      // 1) Get route
+      const result = await getRoute(currentRequest);
+      const routePoints = result.routes[0].overview_path;
+      const intersectCount = countHazardIntersections(routePoints, hazards);
+      if (intersectCount === 0) {
+        // no hazards => done
+        return result;
+      }
+      setNotice(
+        `Iteration ${iterationCount}: ${intersectCount} hazard(s) intersect. Fixing...`
+      );
 
-        // Always request alternatives
-        currentRequest.provideRouteAlternatives = true;
-
-        directionsService.current.route(currentRequest, (result, status) => {
-          if (status !== window.google.maps.DirectionsStatus.OK) {
-            // If we fail to get directions, stop.
-            resolve(null);
-            return;
-          }
-
-          const { routes } = result;
-          if (!routes || routes.length === 0) {
-            resolve(null);
-            return;
-          }
-
-          // Check if any route is hazard-free
-          let hazardFreeRoute = null;
-          let bestRoute = null;
-          let bestIntersections = Infinity;
-
-          routes.forEach((r) => {
-            const rp = r.overview_path;
-            const count = countHazardIntersections(rp, hazards);
-            if (count === 0 && !hazardFreeRoute) {
-              hazardFreeRoute = r; // found a fully safe route
-            }
-            if (count < bestIntersections) {
-              bestRoute = r;
-              bestIntersections = count;
-            }
-          });
-
-          if (hazardFreeRoute) {
-            // We found a safe route
-            resolve({ ...result, routes: [hazardFreeRoute] });
-            return;
-          }
-
-          // No hazard-free route in this attempt, so we add 1 waypoint for the first intersection
-          if (iterationCount < maxIterations) {
-            iterationCount++;
-
-            // We'll make the margin bigger each time we fail
-            const margin = 50 + iterationCount * 50;
-            // e.g. iteration 1 => margin=100, iteration 2 => 150, etc.
-
-            // Use the best route so far
-            const points = bestRoute.overview_path;
-            const firstInt = findFirstIntersection(points, hazards);
-            if (!firstInt) {
-              // If for some reason there's no intersection, it might be effectively safe
-              resolve({ ...result, routes: [bestRoute] });
-              return;
-            }
-            // Create 1 detour waypoint with a bigger margin
-            const detour = computeWaypointOutsideHazard(
-              firstInt.closestPoint,
-              firstInt.hazard,
-              margin
+      // 2) Find one hazard that definitely intersects
+      let foundHazard = null;
+      for (const hazard of hazards) {
+        const hazardLatLng = new window.google.maps.LatLng(
+          hazard.lat,
+          hazard.lng
+        );
+        const crosses = routePoints.some((pt) => {
+          const dist =
+            window.google.maps.geometry.spherical.computeDistanceBetween(
+              new window.google.maps.LatLng(pt.lat(), pt.lng()),
+              hazardLatLng
             );
-
-            // Add that waypoint to the request
-            currentRequest = {
-              ...baseRequest,
-              waypoints: [{ location: detour }],
-              optimizeWaypoints: false,
-            };
-
-            tryNext();
-          } else {
-            // We exhausted attempts, no safe route found
-            resolve(null);
-          }
+          return dist < (hazard.radius || 20);
         });
-      };
+        if (crosses) {
+          foundHazard = hazard;
+          break;
+        }
+      }
+      if (!foundHazard) {
+        // Possibly we have intersections but can't identify which hazard? Edge case
+        return result;
+      }
 
-      tryNext();
-    });
+      // 3) Try the circle approach on that hazard
+      const fix = await fixHazardWithCircle(
+        foundHazard,
+        currentRequest,
+        30,
+        300
+      );
+      if (!fix) {
+        // no route found at all
+        return null;
+      }
+      // Add a marker for the chosen waypoint
+      if (fix.waypoint) {
+        const marker = new window.google.maps.Marker({
+          position: fix.waypoint,
+          map: mapInstanceRef.current,
+          label: `R${iterationCount}`, // or something
+        });
+        detourMarkersRef.current.push(marker);
+      }
+
+      currentRoute = fix.route;
+      // If we found a route that is fully safe => done
+      if (fix.intersections === 0) {
+        return fix.route;
+      }
+
+      // Otherwise, we keep that route as "best so far" but we do want to keep the chosen waypoint
+      currentRequest = {
+        ...request,
+        waypoints: [...(request.waypoints || []), { location: fix.waypoint }],
+      };
+    }
+    return currentRoute; // best we got
   }
 
   const handleGetDirections = async () => {
     if (!startLocation || !endLocation) {
-      alert("Please select both a start and an end location.");
+      alert("Please select both a start and end location.");
       return;
     }
-    if (!directionsService.current) {
-      alert("Directions Service not ready.");
-      return;
-    }
-
-    setNotice("Attempting to find a hazard-free route...");
-    setFinalDirections(null);
+    // Clear old route & markers
+    setFinalRoute(null);
+    setUseDetourColor(false);
+    setNotice("Finding safe route with circle approach...");
+    detourMarkersRef.current.forEach((m) => m.setMap(null));
+    detourMarkersRef.current = [];
 
     const baseRequest = {
       origin: startLocation.geometry.location,
       destination: endLocation.geometry.location,
       travelMode: window.google.maps.TravelMode.WALKING,
-      provideRouteAlternatives: true,
     };
 
-    // 1) Single request with route alternatives
-    directionsService.current.route(baseRequest, (result, status) => {
-      if (status !== window.google.maps.DirectionsStatus.OK) {
+    try {
+      const route = await getSafeRouteCircleApproach(baseRequest, hazards, 8);
+      if (!route) {
         setNotice("");
-        alert("Could not fetch directions. Try again.");
+        alert("No fully safe route found. Sorry!");
         return;
       }
-
-      const { routes } = result;
-      if (!routes || routes.length === 0) {
-        setNotice("");
-        alert("No routes found at all.");
-        return;
-      }
-
-      // Check for hazard-free among these alternatives
-      let hazardFreeRoute = null;
-      let bestRoute = null;
-      let bestIntersections = Infinity;
-
-      routes.forEach((r) => {
-        const rp = r.overview_path;
-        const count = countHazardIntersections(rp, hazards);
-        if (count === 0 && !hazardFreeRoute) {
-          hazardFreeRoute = r;
-        }
-        if (count < bestIntersections) {
-          bestRoute = r;
-          bestIntersections = count;
-        }
-      });
-
-      if (hazardFreeRoute) {
-        // We found a safe route right away
-        setNotice("Hazard-free route found!");
-        setFinalDirections({ ...result, routes: [hazardFreeRoute] });
-        return;
-      }
-
-      // Otherwise, no hazard-free route in the first attempt.
-      // We'll do iterative single-waypoint approach with an increasing margin:
-      setNotice("No hazard-free route. Trying single-waypoint detours...");
-
-      iterativeSingleWaypointSearch(baseRequest, hazards, 8).then(
-        (finalRoute) => {
-          if (finalRoute) {
-            // Check if it's truly hazard-free
-            const routePoints = finalRoute.routes[0].overview_path;
-            const c = countHazardIntersections(routePoints, hazards);
-            if (c === 0) {
-              setNotice(
-                "Hazard-free route found with single-waypoint & bigger margin!"
-              );
-            } else {
-              setNotice(
-                "Still no fully hazard-free route. Showing best found."
-              );
-            }
-            setFinalDirections(finalRoute);
-          } else {
-            setNotice("No hazard-free route found after increasing margins.");
-          }
-        }
-      );
-    });
+      // Check if we used any waypoints
+      setUseDetourColor((baseRequest.waypoints || []).length > 0);
+      setFinalRoute(route);
+      setNotice("Safe route found!");
+      setTimeout(() => setNotice(""), 3000);
+    } catch (err) {
+      setNotice("");
+      alert("No route found: " + err);
+    }
   };
+
+  // Draw hazards
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    hazardMarkersRef.current.forEach((m) => m.setMap(null));
+    hazardMarkersRef.current = [];
+    hazardCirclesRef.current.forEach((c) => c.setMap(null));
+    hazardCirclesRef.current = [];
+
+    hazards.forEach((hazard) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: hazard.lat, lng: hazard.lng },
+        map: mapInstanceRef.current,
+        label: hazard.type,
+      });
+      hazardMarkersRef.current.push(marker);
+
+      const circle = new window.google.maps.Circle({
+        map: mapInstanceRef.current,
+        center: { lat: hazard.lat, lng: hazard.lng },
+        radius: hazard.radius || 20,
+        fillColor: "#FF0000",
+        fillOpacity: 0.2,
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+      });
+      hazardCirclesRef.current.push(circle);
+    });
+  }, [hazards]);
+
+  // Show/hide notice
+  useEffect(() => {
+    if (!infoWindowRef.current || !mapInstanceRef.current) return;
+    if (notice) {
+      infoWindowRef.current.setContent(
+        `<div style="padding:8px;font-weight:bold;">${notice}</div>`
+      );
+      infoWindowRef.current.setPosition(mapInstanceRef.current.getCenter());
+      infoWindowRef.current.open(mapInstanceRef.current);
+    } else {
+      infoWindowRef.current.close();
+    }
+  }, [notice]);
+
+  // Render final route
+  useEffect(() => {
+    if (finalRoute && routeRendererRef.current) {
+      routeRendererRef.current.setDirections(finalRoute);
+      routeRendererRef.current.setOptions({
+        polylineOptions: {
+          strokeColor: useDetourColor ? "red" : "blue",
+          strokeWeight: 5,
+        },
+      });
+      // Fit bounds
+      const bounds = new window.google.maps.LatLngBounds();
+      finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
+      mapInstanceRef.current.fitBounds(bounds);
+    }
+  }, [finalRoute, useDetourColor]);
 
   return (
     <div style={styles.container}>
       <div style={styles.controls}>
         <h2 className="text-2xl font-extrabold text-center text-gray-800 mt-8">
-          Iterative Single
+          Circle Waypoints
         </h2>
         <LocationSearch
           label="Start Location"
