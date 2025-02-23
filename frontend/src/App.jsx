@@ -1,16 +1,22 @@
 import React, { useState } from "react";
-// import MapComponent from "./components/MapComponent";
 import { useJsApiLoader } from "@react-google-maps/api";
-import FormComponent from "./components/FormComponent";
+import RouteSelector from "./components/RouteSelector";
 import HazardSelector from "./components/HazardSelector";
 
-import RouteSelector from "./components/RouteSelector";
-
 const App = () => {
-  const [avoidSlippery, setAvoidSlippery] = useState(false);
+  // State to store an array of hazards
+  const [hazards, setHazards] = useState([]);
+
+  // Example function to handle reported hazards
+  const handleReportHazard = (hazard) => {
+    // Add the new hazard to our hazards array
+    setHazards((prev) => [...prev, hazard]);
+    console.log("New hazard reported:", hazard);
+  };
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: "AIzaSyAHYFZVXwwXhEVEDj6uYOIRs21bNn6_FEE",
+    // Replace with your own API key
+    googleMapsApiKey: "YOUR_API_KEY",
   });
 
   return (
@@ -20,22 +26,23 @@ const App = () => {
         <div className="absolute top-0 left-0 right-0 h-8 bg-gray-800 flex justify-between items-center px-4 text-white">
           <div className="text-sm">Fido</div>
           <div className="flex space-x-2">
-            <span className="text-white">🔋 100%</span> {/* Battery icon */}
-            <span className="text-white">📶 5G</span> {/* Wi-Fi icon */}
+            <span className="text-white">🔋 100%</span>
+            <span className="text-white">📶 5G</span>
           </div>
         </div>
 
-        <RouteSelector />
+        {/* Render the RouteSelector, passing in hazards */}
+        {/* The RouteSelector can now use hazards to avoid them when computing routes */}
+        {isLoaded ? (
+          <RouteSelector hazards={hazards} />
+        ) : (
+          <p className="p-4">Loading map...</p>
+        )}
 
-        {/* <FirstSearchBar />
-        <SecondSearchBar /> */}
-
-        {/* Map takes up the top half */}
-
-        {/* Form takes the bottom half */}
+        {/* Bottom half: Hazard selector form */}
         <div className="h-1/2 p-4">
-          {/* <FormComponent setAvoidSlippery={setAvoidSlippery} /> */}
-          <HazardSelector />
+          {/* Pass the handleReportHazard function so HazardSelector can call it */}
+          <HazardSelector onReportHazard={handleReportHazard} />
         </div>
       </div>
     </div>

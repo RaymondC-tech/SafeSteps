@@ -3,7 +3,7 @@ import { Autocomplete } from "@react-google-maps/api";
 
 // Define your hazard options.
 const hazardOptions = [
-  { label: "Icey", value: "Slippery" },
+  { label: "Icy", value: "Slippery" },
   { label: "Blockage", value: "Blockage" },
   { label: "Other", value: "Other" },
   // Add more options here if needed.
@@ -31,44 +31,22 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
   };
 
   return (
-    <div ref={selectRef} style={{ position: "relative", width: "100%" }}>
+    <div ref={selectRef} className="relative w-full">
       <div
         onClick={() => setOpen(!open)}
-        style={{
-          border: "1px solid #ccc",
-          padding: "5px",
-          cursor: "pointer",
-          background: "#fff",
-          userSelect: "none",
-        }}
+        className="border p-2 cursor-pointer bg-white select-none"
       >
         {value
           ? options.find((opt) => opt.value === value)?.label
           : placeholder}
       </div>
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            // top: "110%",
-            left: 0,
-            right: 0,
-            maxHeight: "50px", // List will not exceed 150px; scroll if needed
-            overflowY: "auto",
-            border: "1px solid #ccc",
-            background: "#fff",
-            zIndex: 1000,
-          }}
-        >
+        <div className="absolute left-0 right-0 max-h-24 overflow-y-auto border bg-white z-10">
           {options.map((option, index) => (
             <div
               key={index}
               onClick={() => handleOptionClick(option.value)}
-              style={{
-                padding: "5px",
-                borderBottom: "1px solid #eee",
-                cursor: "pointer",
-              }}
+              className="p-2 border-b cursor-pointer hover:bg-gray-100"
             >
               {option.label}
             </div>
@@ -113,7 +91,7 @@ const HazardForm = ({ onReportHazard }) => {
       lat: hazardAddress.geometry.location.lat(),
       lng: hazardAddress.geometry.location.lng(),
       type: hazardType,
-      radius: 50,
+      radius: 50, // 50-meter buffer; adjust as needed
       address: hazardAddress.formatted_address,
     };
     onReportHazard(hazard);
@@ -122,21 +100,15 @@ const HazardForm = ({ onReportHazard }) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 rounded"
-      style={{ margin: "-20px" }}
-    >
-      <label className="block mb-2 font-bold" style={{ marginTop: "-10px" }}>
-        Report a Hazard:
-      </label>
+    <form onSubmit={handleSubmit} className="p-4 bg-gray-100 rounded">
+      <label className="block mb-2 font-bold">Report a Hazard:</label>
       <CustomSelect
         value={hazardType}
         onChange={setHazardType}
         options={hazardOptions}
         placeholder="Select Hazard"
       />
-      <div className="mb-2" style={{ marginTop: "10px" }}>
+      <div className="mb-2 mt-4">
         <Autocomplete
           onLoad={handleLoad}
           onPlaceChanged={handlePlaceChanged}
@@ -145,7 +117,7 @@ const HazardForm = ({ onReportHazard }) => {
           <input
             type="text"
             placeholder="Enter hazard location"
-            className="border p-2 w-full mb-2"
+            className="border p-2 w-full"
           />
         </Autocomplete>
       </div>
