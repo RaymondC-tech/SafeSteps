@@ -13,10 +13,11 @@ const HazardSelector = () => {
     }
 
     // Convert address to coordinates
-    const { lat, lng } = location.geometry.location;
+    const lat = location.geometry.location.lat();
+    const lng = location.geometry.location.lng();
 
     // Send data to the backend
-    const response = await fetch("http://127.0.0.1:8000/report-condition/ ", {
+    const response = await fetch("http://127.0.0.1:8000/report-condition/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

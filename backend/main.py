@@ -80,13 +80,13 @@ def calculate_distance(lat1, lng1, lat2, lng2):
     return distance
 
 def get_route_from_google(start_lat, start_lng, end_lat, end_lng):
-    API_KEY = config.google_api_key_sahaj
+    API_KEY = config.google_api_key
     url = f"https://maps.googleapis.com/maps/api/directions/json?origin={start_lat},{start_lng}&destination={end_lat},{end_lng}&mode=walking&key={API_KEY}"
     response = requests.get(url)
     return response.json()
 
 def get_coordinates_from_address(address: str):
-    API_KEY = config.google_api_key_sahaj
+    API_KEY = config.google_api_key
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={API_KEY}"
     response = requests.get(url)
     data = response.json()
@@ -132,6 +132,11 @@ async def get_conditions():
         condition["_id"] = str(condition["_id"])
         conditions.append(condition)
     return conditions
+
+@app.delete('/conditions/')
+async def clear_conditions():
+    result = await conditions_collection.delete_many({})
+    return {"message": f"Deleted {result.deleted_count} conditions."}
 
 @app.get('/get-route/')
 async def get_route(route_request: PathRequest):    # works, this and below gives defualt route which can be used in javascript
