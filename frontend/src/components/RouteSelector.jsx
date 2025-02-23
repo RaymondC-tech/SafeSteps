@@ -82,6 +82,7 @@ export default function RouteSelector({ hazards = [] }) {
       routeRendererRef.current = new window.google.maps.DirectionsRenderer({
         polylineOptions: { strokeColor: "blue", strokeWeight: 5 },
         preserveViewport: false,
+        suppressMarkers: true,
       });
       routeRendererRef.current.setMap(mapInstanceRef.current);
 
@@ -97,6 +98,17 @@ export default function RouteSelector({ hazards = [] }) {
   // Render final route
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
+      new window.google.maps.Marker({
+        position: startLocation.geometry.location,
+        map: mapInstanceRef.current,
+        label: "A",
+      });
+      // Custom marker for destination ("C")
+      new window.google.maps.Marker({
+        position: endLocation.geometry.location,
+        map: mapInstanceRef.current,
+        label: "B",
+      });
       routeRendererRef.current.setDirections(finalRoute);
       routeRendererRef.current.setOptions({
         polylineOptions: {
@@ -109,7 +121,7 @@ export default function RouteSelector({ hazards = [] }) {
       finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
       mapInstanceRef.current.fitBounds(bounds);
     }
-  }, [finalRoute, useDetourColor]);
+  }, [startLocation, endLocation, finalRoute, useDetourColor]);
 
   // Show/hide notice
   useEffect(() => {
@@ -185,7 +197,7 @@ export default function RouteSelector({ hazards = [] }) {
     let bestWaypoint = null;
 
     while (radius <= maxRadius) {
-      setNotice(`Trying circle radius = ${radius} for hazard ${hazard.type}`);
+      //   setNotice(`Trying circle radius = ${radius} for hazard ${hazard.type}`);
       // Generate candidate waypoints
       const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
       for (let i = 0; i < candidates.length; i++) {
@@ -248,9 +260,9 @@ export default function RouteSelector({ hazards = [] }) {
         // no hazards => done
         return result;
       }
-      setNotice(
-        `Iteration ${iterationCount}: ${intersectCount} hazard(s) intersect. Fixing...`
-      );
+      //   setNotice(
+      //     `Iteration ${iterationCount}: ${intersectCount} hazard(s) intersect. Fixing...`
+      //   );
 
       // 2) Find one hazard that definitely intersects
       let foundHazard = null;
@@ -289,14 +301,14 @@ export default function RouteSelector({ hazards = [] }) {
         return null;
       }
       // Add a marker for the chosen waypoint
-      if (fix.waypoint) {
-        const marker = new window.google.maps.Marker({
-          position: fix.waypoint,
-          map: mapInstanceRef.current,
-          label: `R${iterationCount}`, // or something
-        });
-        detourMarkersRef.current.push(marker);
-      }
+      //   if (fix.waypoint) {
+      //     const marker = new window.google.maps.Marker({
+      //       position: fix.waypoint,
+      //       map: mapInstanceRef.current,
+      //       label: `R${iterationCount}`, // or something
+      //     });
+      //     detourMarkersRef.current.push(marker);
+      //   }
 
       currentRoute = fix.route;
       // If we found a route that is fully safe => done
@@ -321,7 +333,7 @@ export default function RouteSelector({ hazards = [] }) {
     // Clear old route & markers
     setFinalRoute(null);
     setUseDetourColor(false);
-    setNotice("Finding safe route with circle approach...");
+    // setNotice("Finding safe route with circle approach...");
     detourMarkersRef.current.forEach((m) => m.setMap(null));
     detourMarkersRef.current = [];
 
