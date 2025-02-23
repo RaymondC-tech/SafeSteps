@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import LocationSearch from "./LocationSearch";
-
-// import { TextField, Button, Paper, Box, Typography } from "@mui/material";
+import Modal from "./Modal"; // <-- ADDED: import your modal component
 
 /* ============ Helpers ============ */
 
@@ -52,6 +51,9 @@ function generateCircleWaypoints(hazard, radiusInMeters, angleStep = 30) {
 /* ============ End Helpers ============ */
 
 export default function RouteSelector({ hazards = [] }) {
+  // ADDED: state for modal visibility
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [startLocation, setStartLocation] = useState(null);
   const [endLocation, setEndLocation] = useState(null);
   const [finalRoute, setFinalRoute] = useState(null);
@@ -99,13 +101,12 @@ export default function RouteSelector({ hazards = [] }) {
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
       new window.google.maps.Marker({
-        position: startLocation.geometry.location,
+        position: startLocation?.geometry.location,
         map: mapInstanceRef.current,
         label: "A",
       });
-      // Custom marker for destination ("C")
       new window.google.maps.Marker({
-        position: endLocation.geometry.location,
+        position: endLocation?.geometry.location,
         map: mapInstanceRef.current,
         label: "B",
       });
@@ -180,11 +181,6 @@ export default function RouteSelector({ hazards = [] }) {
     });
   }
 
-  /**
-   * For each hazard that intersects, we do the "circle approach":
-   * - Start at radius=30, try all angles => pick best route
-   * - If still intersects, radius=40, 50, etc. until we reduce intersections or get 0
-   */
   async function fixHazardWithCircle(
     hazard,
     baseRequest,
@@ -197,17 +193,12 @@ export default function RouteSelector({ hazards = [] }) {
     let bestWaypoint = null;
 
     while (radius <= maxRadius) {
-      //   setNotice(`Trying circle radius = ${radius} for hazard ${hazard.type}`);
-      // Generate candidate waypoints
-      const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
+      const candidates = generateCircleWaypoints(hazard, radius, 30);
       for (let i = 0; i < candidates.length; i++) {
         const candidate = candidates[i];
         const testRequest = {
           ...baseRequest,
-          waypoints: [
-            ...(baseRequest.waypoints || []),
-            { location: candidate },
-          ],
+          waypoints: [...(baseRequest.waypoints || []), { location: candidate }],
         };
         try {
           const result = await getRoute(testRequest);
@@ -218,7 +209,7 @@ export default function RouteSelector({ hazards = [] }) {
             bestRoute = result;
             bestWaypoint = candidate;
             if (bestIntersections === 0) {
-              break; // fully safe
+              break;
             }
           }
         } catch {
@@ -226,13 +217,12 @@ export default function RouteSelector({ hazards = [] }) {
         }
       }
       if (bestRoute && bestIntersections === 0) {
-        // Found a hazard-free route with this circle radius
         break;
       }
-      radius += 10; // increase circle radius
+      radius += 10;
     }
 
-    if (!bestRoute) return null; // no route found at all
+    if (!bestRoute) return null;
     return {
       route: bestRoute,
       waypoint: bestWaypoint,
@@ -240,31 +230,20 @@ export default function RouteSelector({ hazards = [] }) {
     };
   }
 
-  // Master function: For each hazard that intersects, fix it with a circle approach, then proceed
-  async function getSafeRouteCircleApproach(
-    request,
-    hazards,
-    maxIterations = 8
-  ) {
+  async function getSafeRouteCircleApproach(request, hazards, maxIterations = 8) {
     let iterationCount = 0;
     let currentRequest = { ...request };
     let currentRoute = null;
 
     while (iterationCount < maxIterations) {
       iterationCount++;
-      // 1) Get route
       const result = await getRoute(currentRequest);
       const routePoints = result.routes[0].overview_path;
       const intersectCount = countHazardIntersections(routePoints, hazards);
       if (intersectCount === 0) {
-        // no hazards => done
         return result;
       }
-      //   setNotice(
-      //     `Iteration ${iterationCount}: ${intersectCount} hazard(s) intersect. Fixing...`
-      //   );
 
-      // 2) Find one hazard that definitely intersects
       let foundHazard = null;
       for (const hazard of hazards) {
         const hazardLatLng = new window.google.maps.LatLng(
@@ -285,44 +264,24 @@ export default function RouteSelector({ hazards = [] }) {
         }
       }
       if (!foundHazard) {
-        // Possibly we have intersections but can't identify which hazard? Edge case
         return result;
       }
 
-      // 3) Try the circle approach on that hazard
-      const fix = await fixHazardWithCircle(
-        foundHazard,
-        currentRequest,
-        30,
-        300
-      );
+      const fix = await fixHazardWithCircle(foundHazard, currentRequest, 30, 300);
       if (!fix) {
-        // no route found at all
         return null;
       }
-      // Add a marker for the chosen waypoint
-      //   if (fix.waypoint) {
-      //     const marker = new window.google.maps.Marker({
-      //       position: fix.waypoint,
-      //       map: mapInstanceRef.current,
-      //       label: `R${iterationCount}`, // or something
-      //     });
-      //     detourMarkersRef.current.push(marker);
-      //   }
-
       currentRoute = fix.route;
-      // If we found a route that is fully safe => done
       if (fix.intersections === 0) {
         return fix.route;
       }
 
-      // Otherwise, we keep that route as "best so far" but we do want to keep the chosen waypoint
       currentRequest = {
         ...request,
         waypoints: [...(request.waypoints || []), { location: fix.waypoint }],
       };
     }
-    return currentRoute; // best we got
+    return currentRoute;
   }
 
   const handleGetDirections = async () => {
@@ -330,10 +289,8 @@ export default function RouteSelector({ hazards = [] }) {
       alert("Please select both a start and end location.");
       return;
     }
-    // Clear old route & markers
     setFinalRoute(null);
     setUseDetourColor(false);
-    // setNotice("Finding safe route with circle approach...");
     detourMarkersRef.current.forEach((m) => m.setMap(null));
     detourMarkersRef.current = [];
 
@@ -350,7 +307,6 @@ export default function RouteSelector({ hazards = [] }) {
         alert("No fully safe route found. Sorry!");
         return;
       }
-      // Check if we used any waypoints
       setUseDetourColor((baseRequest.waypoints || []).length > 0);
       setFinalRoute(route);
       setNotice("Safe route found!");
@@ -415,7 +371,6 @@ export default function RouteSelector({ hazards = [] }) {
           strokeWeight: 5,
         },
       });
-      // Fit bounds
       const bounds = new window.google.maps.LatLngBounds();
       finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
       mapInstanceRef.current.fitBounds(bounds);
@@ -425,7 +380,17 @@ export default function RouteSelector({ hazards = [] }) {
   return (
     <div style={styles.container}>
       <div style={styles.controls}>
-        <h2 style={styles.heading}>🚶‍♂️ Walking Route Planner</h2>
+        {/* Absolutely position the image on the left, center the heading. */}
+        <div style={styles.headerRow}>
+          <img
+            src="/images/profile.png" // <-- your profile image
+            alt="Profile"
+            style={styles.profilePic}
+            onClick={() => setIsModalOpen(true)} // opens modal
+          />
+          <h2 style={styles.heading}>🚶‍♂️ SafeSteps</h2>
+        </div>
+
         <LocationSearch
           label="Start Location"
           onPlaceSelected={setStartLocation}
@@ -436,24 +401,31 @@ export default function RouteSelector({ hazards = [] }) {
         </button>
       </div>
       <div ref={mapRef} style={styles.mapContainer} />
+
+      {/* Conditionally render the modal */}
+      {isModalOpen && <Modal onClose={() => setIsModalOpen(false)} />}
     </div>
   );
 }
 
 const styles = {
+  // The heading is absolutely centered in its parent
   heading: {
-    fontSize: "14px", // Increased for better visibility
-    fontWeight: "bold", // Makes it stand out
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    transform: "translate(-50%, -50%)",
+    fontSize: "14px",
+    fontWeight: "bold",
     textAlign: "center",
-    fontFamily: "Arial, sans-serif", // Modern, clean font
-    color: "#000", // Dark grey for a professional look
-    marginBottom: "10px", // Adds spacing before inputs
-    marginTop: "10px",
-    paddingBottom: "5px",
-    borderBottom: "3px solid #007BFF", // Underline effect with theme color
-    textTransform: "uppercase", // Makes text more structured
-    letterSpacing: "1px", // Adds spacing between letters for readability
-    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)", // Subtle shadow effect
+    fontFamily: "Arial, sans-serif",
+    color: "#000",
+    textTransform: "uppercase",
+    letterSpacing: "1px",
+    textShadow: "1px 1px 2px rgba(0, 0, 0, 0.2)",
+    borderBottom: "3px solid #007BFF",
+    paddingBottom: "3px",
+    margin: 0, // remove default margins for absolute positioning
   },
   container: {
     display: "flex",
@@ -463,36 +435,59 @@ const styles = {
     position: "relative",
   },
   controls: {
-    backgroundColor: "rgba(50, 50, 50, 0.4)", // Semi-transparent grey
-    backdropFilter: "blur(10px)", // Glassmorphism effect
+    backgroundColor: "rgba(50, 50, 50, 0.4)",
+    backdropFilter: "blur(10px)",
     borderRadius: "10px",
-    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)", // Floating effect
-    zIndex: "1000", // Puts this section above the map
-    position: "absolute", // Ensures it stays above
-    top: "96px", // Moves it slightly down
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)",
+    zIndex: "1000",
+    position: "absolute",
+    top: "96px",
     left: "50%",
-    transform: "translateX(-50%)", // Centers it
+    transform: "translateX(-50%)",
+  },
+  /**
+   * This container is relative so the heading can be absolutely centered
+   * while the image is pinned on the left edge.
+   */
+  headerRow: {
+    position: "relative",
+    width: "100%",
+    height: "50px", // Enough height for the image & heading
+  },
+  /**
+   * The profile picture is absolutely placed on the left,
+   * vertically centered by top: 50% + translateY(-50%).
+   */
+  profilePic: {
+    position: "absolute",
+    left: "10px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    width: "40px",
+    height: "40px",
+    borderRadius: "50%",
+    cursor: "pointer",
   },
   button: {
-    padding: "8px 12px", // Adds more inner spacing for better appearance
-    fontSize: "12px", // Slightly bigger font for better readability
+    padding: "8px 12px",
+    fontSize: "12px",
     backgroundColor: "#007BFF",
     color: "#fff",
     border: "none",
-    borderRadius: "8px", // Rounded corners
+    borderRadius: "8px",
     cursor: "pointer",
-    margin: "10px auto", // Ensures spacing and centers button horizontally
-    display: "block", // Ensures proper alignment
-    width: "50%", // Limits width so it's not too large
-    maxWidth: "250px", // Sets a maximum width
+    margin: "10px auto",
+    display: "block",
+    width: "50%",
+    maxWidth: "250px",
   },
   mapContainer: {
     width: "100%",
     maxWidth: "500px",
     marginTop: "35px",
     height: "701px",
-    position: "relative", // Keeps map behind the controls
-    zIndex: "1", // Ensures map stays in the background
+    position: "relative",
+    zIndex: "1",
     borderTop: "2px solid #000",
     borderBottom: "2px solid #000",
   },
