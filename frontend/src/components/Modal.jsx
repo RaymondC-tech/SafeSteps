@@ -7,10 +7,18 @@ const Modal = ({ onClose }) => {
         <h2 style={modalStyles.title}>Sign Up / Log In</h2>
         <form>
           <input type="text" placeholder="Email" style={modalStyles.input} />
-          <input type="password" placeholder="Password" style={modalStyles.input} />
+          <input
+            type="password"
+            placeholder="Password"
+            style={modalStyles.input}
+          />
           <div style={modalStyles.buttonContainer}>
-            <button type="submit" style={modalStyles.button}>Log In</button>
-            <button type="button" style={modalStyles.button} onClick={onClose}>Sign Up</button>
+            <button type="submit" style={modalStyles.button}>
+              Log In
+            </button>
+            <button type="button" style={modalStyles.button} onClick={onClose}>
+              Sign Up
+            </button>
           </div>
         </form>
       </div>
@@ -29,7 +37,7 @@ const modalStyles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 1000,
+    zIndex: 10000,
   },
   container: {
     backgroundColor: "white",
@@ -78,4 +86,4 @@ const modalStyles = {
   },
 };
 
-export default Modal; 
+export default Modal;

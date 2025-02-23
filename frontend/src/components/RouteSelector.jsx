@@ -103,7 +103,6 @@ export default function RouteSelector({ hazards = [] }) {
   // Render final route
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
-
       if (
         finalRoute &&
         routeRendererRef.current &&
@@ -141,7 +140,6 @@ export default function RouteSelector({ hazards = [] }) {
         finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
         mapInstanceRef.current.fitBounds(bounds);
       }
-
     }
   }, [finalRoute, startLocation, endLocation, useDetourColor]);
 
@@ -214,7 +212,6 @@ export default function RouteSelector({ hazards = [] }) {
     let bestWaypoint = null;
 
     while (radius <= maxRadius) {
-
       setNotice(`Loading...`);
       // Generate candidate waypoints
       const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
@@ -223,7 +220,10 @@ export default function RouteSelector({ hazards = [] }) {
         const candidate = candidates[i];
         const testRequest = {
           ...baseRequest,
-          waypoints: [...(baseRequest.waypoints || []), { location: candidate }],
+          waypoints: [
+            ...(baseRequest.waypoints || []),
+            { location: candidate },
+          ],
         };
         try {
           const result = await getRoute(testRequest);
@@ -255,7 +255,11 @@ export default function RouteSelector({ hazards = [] }) {
     };
   }
 
-  async function getSafeRouteCircleApproach(request, hazards, maxIterations = 8) {
+  async function getSafeRouteCircleApproach(
+    request,
+    hazards,
+    maxIterations = 8
+  ) {
     let iterationCount = 0;
     let currentRequest = { ...request };
     let currentRoute = null;
@@ -292,7 +296,12 @@ export default function RouteSelector({ hazards = [] }) {
         return result;
       }
 
-      const fix = await fixHazardWithCircle(foundHazard, currentRequest, 30, 300);
+      const fix = await fixHazardWithCircle(
+        foundHazard,
+        currentRequest,
+        30,
+        300
+      );
       if (!fix) {
         return null;
       }
