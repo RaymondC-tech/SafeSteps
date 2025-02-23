@@ -58,6 +58,9 @@ export default function RouteSelector({ hazards = [] }) {
   const [notice, setNotice] = useState("");
   const [useDetourColor, setUseDetourColor] = useState(false);
 
+  const startMarkerRef = useRef(null);
+  const endMarkerRef = useRef(null);
+
   // Map references
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -98,30 +101,45 @@ export default function RouteSelector({ hazards = [] }) {
   // Render final route
   useEffect(() => {
     if (finalRoute && routeRendererRef.current) {
-      new window.google.maps.Marker({
-        position: startLocation.geometry.location,
-        map: mapInstanceRef.current,
-        label: "A",
-      });
-      // Custom marker for destination ("C")
-      new window.google.maps.Marker({
-        position: endLocation.geometry.location,
-        map: mapInstanceRef.current,
-        label: "B",
-      });
-      routeRendererRef.current.setDirections(finalRoute);
-      routeRendererRef.current.setOptions({
-        polylineOptions: {
-          strokeColor: useDetourColor ? "red" : "blue",
-          strokeWeight: 5,
-        },
-      });
-      // Fit map to route
-      const bounds = new window.google.maps.LatLngBounds();
-      finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
-      mapInstanceRef.current.fitBounds(bounds);
+      if (
+        finalRoute &&
+        routeRendererRef.current &&
+        startLocation &&
+        endLocation
+      ) {
+        // Clear old custom markers
+        if (startMarkerRef.current) {
+          startMarkerRef.current.setMap(null);
+        }
+        if (endMarkerRef.current) {
+          endMarkerRef.current.setMap(null);
+        }
+        // Create new markers and save them in refs
+        startMarkerRef.current = new window.google.maps.Marker({
+          position: startLocation.geometry.location,
+          map: mapInstanceRef.current,
+          label: "A",
+        });
+        endMarkerRef.current = new window.google.maps.Marker({
+          position: endLocation.geometry.location,
+          map: mapInstanceRef.current,
+          label: "B",
+        });
+
+        // Render route and fit map
+        routeRendererRef.current.setDirections(finalRoute);
+        routeRendererRef.current.setOptions({
+          polylineOptions: {
+            strokeColor: useDetourColor ? "red" : "blue",
+            strokeWeight: 5,
+          },
+        });
+        const bounds = new window.google.maps.LatLngBounds();
+        finalRoute.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
+        mapInstanceRef.current.fitBounds(bounds);
+      }
     }
-  }, [startLocation, endLocation, finalRoute, useDetourColor]);
+  }, [finalRoute, startLocation, endLocation, useDetourColor]);
 
   // Show/hide notice
   useEffect(() => {
@@ -197,7 +215,7 @@ export default function RouteSelector({ hazards = [] }) {
     let bestWaypoint = null;
 
     while (radius <= maxRadius) {
-      //   setNotice(`Trying circle radius = ${radius} for hazard ${hazard.type}`);
+      setNotice(`Loading...`);
       // Generate candidate waypoints
       const candidates = generateCircleWaypoints(hazard, radius, 30); // 12 points around the circle
       for (let i = 0; i < candidates.length; i++) {

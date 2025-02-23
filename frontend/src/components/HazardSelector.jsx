@@ -188,6 +188,7 @@ const HazardForm = ({ onReportHazard }) => {
               padding: "5px",
               width: "100%",
               maxWidth: "200px",
+              //   bottom: "100%",
             }}
           />
         </Autocomplete>
