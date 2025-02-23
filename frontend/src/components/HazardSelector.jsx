@@ -6,15 +6,12 @@ const hazardOptions = [
   { label: "Icey", value: "Slippery" },
   { label: "Blockage", value: "Blockage" },
   { label: "Other", value: "Other" },
-  // Add more options here if needed.
 ];
 
-// A custom select component that displays a scrollable list of options.
 const CustomSelect = ({ value, onChange, options, placeholder }) => {
   const [open, setOpen] = useState(false);
   const selectRef = useRef(null);
 
-  // Close the dropdown if user clicks outside.
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (selectRef.current && !selectRef.current.contains(e.target)) {
@@ -36,28 +33,30 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
         onClick={() => setOpen(!open)}
         style={{
           border: "1px solid #ccc",
-          padding: "5px",
+          padding: "3px",
           cursor: "pointer",
           background: "#fff",
+          fontSize: "9px",
           userSelect: "none",
+          width: "100%",
+          maxWidth: "180px", // Smaller width
+          borderRadius: "5px",
         }}
       >
-        {value
-          ? options.find((opt) => opt.value === value)?.label
-          : placeholder}
+        {value ? options.find((opt) => opt.value === value)?.label : placeholder}
       </div>
       {open && (
         <div
           style={{
             position: "absolute",
-            // top: "110%",
             left: 0,
             right: 0,
-            maxHeight: "50px", // List will not exceed 150px; scroll if needed
+            maxHeight: "40px",
             overflowY: "auto",
             border: "1px solid #ccc",
             background: "#fff",
             zIndex: 1000,
+            fontSize: "9px",
           }}
         >
           {options.map((option, index) => (
@@ -65,7 +64,7 @@ const CustomSelect = ({ value, onChange, options, placeholder }) => {
               key={index}
               onClick={() => handleOptionClick(option.value)}
               style={{
-                padding: "5px",
+                padding: "3px",
                 borderBottom: "1px solid #eee",
                 cursor: "pointer",
               }}
@@ -124,32 +123,77 @@ const HazardForm = ({ onReportHazard }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-4 rounded"
-      style={{ margin: "-20px" }}
+      className="p-2 rounded"
+      style={{
+        backgroundColor: "rgba(50, 50, 50, 0.4)", // More transparent
+        borderRadius: "8px",
+        backdropFilter: "blur(4px)",
+        padding: "10px",
+        position: "absolute",
+        bottom: "29px", // Moves slightly up
+        left: "38%",
+        transform: "translateX(-50%)",
+        zIndex: 1000,
+        width: "70%",
+        maxWidth: "280px", // More compact width
+        boxShadow: "0px 2px 6px rgba(0, 0, 0, 0.2)", // Lighter shadow
+      }}
     >
-      <label className="block mb-2 font-bold" style={{ marginTop: "-10px" }}>
+      <label
+        className="block mb-1 font-bold text-white"
+        style={{ fontSize: "10px"}}
+      >
         Report a Hazard:
       </label>
+
+      {/* Custom Select */}
       <CustomSelect
         value={hazardType}
         onChange={setHazardType}
         options={hazardOptions}
         placeholder="Select Hazard"
+        style={{
+          fontSize: "9px",
+          padding: "3px",
+          width: "100%",
+          maxWidth: "180px",
+        }}
       />
-      <div className="mb-2" style={{ marginTop: "10px" }}>
-        <Autocomplete
-          onLoad={handleLoad}
-          onPlaceChanged={handlePlaceChanged}
-          options={{ types: ["establishment"] }}
-        >
+
+      {/* Autocomplete Location Input */}
+      <div className="mb-1" style={{ marginTop: "4px" }}>
+        <Autocomplete onLoad={handleLoad} onPlaceChanged={handlePlaceChanged}>
           <input
             type="text"
             placeholder="Enter hazard location"
-            className="border p-2 w-full mb-2"
+            className="border p-1 w-full rounded"
+            style={{
+              backgroundColor: "rgba(255, 255, 255, 0.7)",
+              color: "#000",
+              border: "1px solid #ccc",
+              fontSize: "9px",
+              padding: "3px",
+              width: "100%",
+              maxWidth: "180px",
+              
+            }}
           />
         </Autocomplete>
       </div>
-      <button type="submit" className="mt-2 bg-red-500 text-white p-2 w-full">
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        className="mt-1 bg-red-500 text-white w-full rounded-lg"
+        style={{
+          fontSize: "9px",
+          padding: "3px",
+          maxWidth: "140px",
+          textAlign: "center",
+          display: "block",
+          margin: "0 auto",
+        }}
+      >
         Report Hazard
       </button>
     </form>
