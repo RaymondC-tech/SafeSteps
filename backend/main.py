@@ -14,10 +14,10 @@ import requests
 
 from math import radians, sin, cos, sqrt, atan2
 
+import config
+
 # Add the parent directory to the system path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import config
 
 
 # MongoDB connection URL (change if needed)
@@ -107,7 +107,7 @@ async def root():
 @app.post('/report-condition/')
 async def report_condition(data: ReportCondition):
     # Convert the incoming data to a dictionary
-    condition_dict = data.dict(exclude={"id"})  # Exclude the id if present
+    condition_dict = data.model_dump(exclude={"id"})  # Exclude the id if present
     # Insert the hazard report into the MongoDB collection
     result = await conditions_collection.insert_one(condition_dict)
     return {"message": "Condition reported successfully", "id": str(result.inserted_id)}
